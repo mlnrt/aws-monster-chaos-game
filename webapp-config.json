@@ -1,0 +1,13 @@
+{
+    "app": {
+        "namespace": "aws-chaos.game",
+        "name": "app",
+        "path": "/game",
+        "healthCheckPath": "/health",
+        "port": 3000
+    },
+    "nginx": {
+        "port": 8080,
+        "healthCheckPath": "/health"
+    }
+}

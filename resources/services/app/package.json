@@ -1,0 +1,30 @@
+{
+  "name": "aws-chaos-game-web-app",
+  "version": "0.1.0",
+  "description": "AWS Chaos Game - Web Application",
+  "main": "server.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mlnrt/aws-chaos-game.git"
+  },
+  "keywords": [
+    "aws",
+    "web",
+    "application"
+  ],
+  "author": "Matthieu Lienart",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/mlnrt/aws-chaos-game/issues"
+  },
+  "homepage": "https://github.com/mlnrt/aws-chaos-game#readme",
+  "dependencies": {
+    "express": "^4.18.1",
+    "express-healthcheck": "^0.1.0",
+    "path": "^0.12.7",
+    "process": "^0.11.10"
+  }
+}
