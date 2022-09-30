@@ -1,7 +1,7 @@
 import { Construct } from 'constructs';
 import { RemovalPolicy, Duration } from 'aws-cdk-lib';
 import { RetentionDays, LogGroup } from 'aws-cdk-lib/aws-logs';
-import { Vpc, IVpc, SubnetType, SecurityGroup, Port, GatewayVpcEndpointAwsService, InterfaceVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
+import { IVpc, SubnetType, Port } from 'aws-cdk-lib/aws-ec2';
 import {
   Cluster,
   ICluster,
@@ -16,7 +16,8 @@ import {
 } from 'aws-cdk-lib/aws-ecs';
 import { IApplicationLoadBalancer, IApplicationListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
-import { PrivateDnsNamespace, DnsRecordType } from 'aws-cdk-lib/aws-servicediscovery';
+import { IPrivateDnsNamespace, PrivateDnsNamespace, DnsRecordType } from 'aws-cdk-lib/aws-servicediscovery';
+import { ChaosGameWebAppNetwork } from './network';
 import { WebAppImage } from './webapp-image';
 import * as webappConfig from '../../webapp-config.json';
 
@@ -33,7 +34,7 @@ export class ChaosGameWebApp extends Construct {
   public readonly namespace: string;
   public readonly removalPolicy: RemovalPolicy;
   public readonly vpc: IVpc;
-  public readonly webAppNamespace: PrivateDnsNamespace;
+  public readonly webAppNamespace: IPrivateDnsNamespace;
   public readonly ecsCluster: ICluster;
   public readonly nginxLoadBalancer: IApplicationLoadBalancer;
   public readonly nginxListener: IApplicationListener;
@@ -52,75 +53,11 @@ export class ChaosGameWebApp extends Construct {
     //
     // Setup the VPC and subnets
     const vpcCider = props.vpcCider || '10.0.0.0/20'
-    this.vpc = new Vpc(this, 'Vpc', {
-      vpcName: `${this.prefix}-webapp-vpc`,
-      maxAzs: 3,
-      cidr: vpcCider,
-      natGateways: 3,
-      subnetConfiguration: [
-        {
-          cidrMask: 24,
-          name: 'Public',
-          subnetType: SubnetType.PUBLIC,
-        },
-        {
-          cidrMask: 24,
-          name: 'ReverseProxy',
-          subnetType: SubnetType.PRIVATE_WITH_EGRESS,
-        },
-        {
-          cidrMask: 24,
-          name: 'Application',
-          subnetType: SubnetType.PRIVATE_ISOLATED,
-        }
-      ]
+    const chaosGameAppNetwork = new ChaosGameWebAppNetwork(this, 'Network', {
+      prefix: this.prefix,
+      vpcCider: vpcCider
     });
-
-    const appNSG = new SecurityGroup( this, `AppServiceSecurityGroup`, {
-      securityGroupName: `${this.prefix}-app-NSG`,
-      vpc: this.vpc,
-      allowAllOutbound: true,
-    });
-
-    // To run a Fargate Task in a private isolated Subnets the following VPC Endpoints are required:
-    // - Gateway Endpoint for S3
-    // - Interface Endpoint for ecr.api
-    // - Interface Endpoint for ecr.docker
-    // - Interface Endpoint for CloudWatch
-    // - Interface Endpoint for CloudWatch logs (when logging to CloudWatch)
-    // https://aws.amazon.com/premiumsupport/knowledge-center/ecs-fargate-tasks-pending-state/
-    // Add CloudWatch and CloudWatch Logs Endpoints for the Fargate Application containers in the isolated subnets
-    this.vpc.addInterfaceEndpoint('CloudWatchEndpoint', {
-      service: InterfaceVpcEndpointAwsService.CLOUDWATCH,
-      subnets: {
-        subnetType: SubnetType.PRIVATE_ISOLATED,
-      },
-      privateDnsEnabled: true,
-    });
-
-    this.vpc.addInterfaceEndpoint('CloudWatchLogsEndpoint', {
-      service: InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
-      subnets: {
-        subnetType: SubnetType.PRIVATE_ISOLATED,
-      },
-      privateDnsEnabled: true,
-    });
-
-    // Add the ECR endpoint to be able to access the ECR repository containing the Docker images
-    this.vpc.addInterfaceEndpoint('EcrApiEndpoint', {
-      service: InterfaceVpcEndpointAwsService.ECR,
-    });
-
-    this.vpc.addInterfaceEndpoint('EcrDockerEndpoint', {
-      service: InterfaceVpcEndpointAwsService.ECR_DOCKER,
-    });
-
-    this.vpc.addGatewayEndpoint('S3Endpoint', {
-      service: GatewayVpcEndpointAwsService.S3,
-      subnets: [{
-        subnetType: SubnetType.PRIVATE_ISOLATED,
-      }]
-    });
+    this.vpc = chaosGameAppNetwork.vpc
 
     //
     // Application Cloud Map Namespace
@@ -179,7 +116,10 @@ export class ChaosGameWebApp extends Construct {
         streamPrefix: `${this.prefix}-app-service`,
       }),
       healthCheck:{
-        command: ['CMD-SHELL', `curl -f http://localhost:${webappConfig.app.port}${webappConfig.app.healthCheckPath} || exit 1`],
+        command: [
+          'CMD-SHELL',
+          `curl -f http://localhost:${webappConfig.app.port}${webappConfig.app.healthCheckPath} || exit 1`
+        ],
       },
       portMappings:[{
         containerPort: webappConfig.app.port,
@@ -194,7 +134,7 @@ export class ChaosGameWebApp extends Construct {
         subnetType: SubnetType.PRIVATE_ISOLATED,
       },
       taskDefinition: appTaskDefinition,
-      securityGroups: [appNSG],
+      securityGroups: [chaosGameAppNetwork.appNsg],
       assignPublicIp: false,
       desiredCount: 3,
       cloudMapOptions: {
@@ -245,7 +185,11 @@ export class ChaosGameWebApp extends Construct {
     });
 
     // Add an incoming rule to the Application NSG to allow incoming traffic from the NSG of the Nginx load balancer
-    appNSG.addIngressRule(nginx.service.connections.securityGroups[0], Port.tcp(webappConfig.app.port), 'Allow Nginx to access the App');
+    chaosGameAppNetwork.appNsg.addIngressRule(
+      nginx.service.connections.securityGroups[0],
+      Port.tcp(webappConfig.app.port),
+      'Allow Nginx to access the App'
+    );
 
     this.nginxLoadBalancer = nginx.loadBalancer;
     this.nginxListener = nginx.listener;

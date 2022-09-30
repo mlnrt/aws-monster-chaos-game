@@ -1,15 +1,16 @@
 import { Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { ChaosGameWebApp} from "./webapp/webapp";
+import { ChaosGameWebApp} from "./webapp";
 
 export interface AwsChaosGameStackProps extends StackProps {
   readonly prefix: string;
   readonly removalPolicy?: RemovalPolicy;
 }
 
-export class AwsChaosGameStack extends Stack {
+export class AwsChaosGameWebappStack extends Stack {
   public readonly prefix: string;
   public readonly removalPolicy: RemovalPolicy;
+  public readonly webApp: ChaosGameWebApp;
 
   constructor(scope: Construct, id: string, props: AwsChaosGameStackProps) {
     super(scope, id, props);
@@ -17,7 +18,7 @@ export class AwsChaosGameStack extends Stack {
     this.prefix = props.prefix;
     this.removalPolicy = props.removalPolicy || RemovalPolicy.DESTROY;
 
-    const webapp = new ChaosGameWebApp(this, 'WebApp', {
+    this.webApp = new ChaosGameWebApp(this, 'WebApp', {
       prefix: this.prefix,
       removalPolicy: this.removalPolicy,
     });
