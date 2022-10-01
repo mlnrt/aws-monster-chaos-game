@@ -1,13 +1,13 @@
 import { Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { ChaosGameWebApp} from "./webapp";
+import { ChaosGameWebApp} from "./app/webapp";
 
 export interface AwsChaosGameStackProps extends StackProps {
   readonly prefix: string;
   readonly removalPolicy?: RemovalPolicy;
 }
 
-export class AwsChaosGameWebappStack extends Stack {
+export class AwsChaosGameAppStack extends Stack {
   public readonly prefix: string;
   public readonly removalPolicy: RemovalPolicy;
   public readonly webApp: ChaosGameWebApp;

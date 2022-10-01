@@ -1,5 +1,6 @@
 import { Construct } from 'constructs';
 import { RemovalPolicy, Duration } from 'aws-cdk-lib';
+import { Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { RetentionDays, LogGroup } from 'aws-cdk-lib/aws-logs';
 import { IVpc, SubnetType, Port } from 'aws-cdk-lib/aws-ec2';
 import {
@@ -62,13 +63,11 @@ export class ChaosGameWebApp extends Construct {
     //
     // Application Cloud Map Namespace
     //
-    this.webAppNamespace = new PrivateDnsNamespace(this, 'DnsNamespace',
-      {
+    this.webAppNamespace = new PrivateDnsNamespace(this, 'DnsNamespace', {
         name: this.namespace,
         vpc: this.vpc,
         description: 'Private DnsNamespace for the App Microservices',
-      }
-    );
+      });
 
     //
     // ECS base components
@@ -88,13 +87,23 @@ export class ChaosGameWebApp extends Construct {
     });
 
     // CloudWatch LogGroup for the web app task
-    const webAppLogGroup = new LogGroup(this, 'AppServiceLogGroup',
-      {
-        logGroupName: `/ecs/${this.prefix}-app-service`,
-        retention: RetentionDays.ONE_WEEK,
-        removalPolicy: this.removalPolicy,
-      }
-    );
+    const webAppLogGroup = new LogGroup(this, 'AppServiceLogGroup', {
+      logGroupName: `/ecs/${this.prefix}-app-service`,
+      retention: RetentionDays.ONE_WEEK,
+      removalPolicy: this.removalPolicy,
+    });
+
+    // IAM Role for both Fargate tasks to give access to publish metrics to X-Ray
+    const taskRole = new Role(this, 'FargateTaskRole', {
+      roleName: `${this.prefix}-fargate-task-role`,
+      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
+    });
+    taskRole.addManagedPolicy({
+      managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy',
+    });
+    taskRole.addManagedPolicy({
+      managedPolicyArn: 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
+    });
 
     //
     // Fargate Service for the Application
@@ -106,7 +115,8 @@ export class ChaosGameWebApp extends Construct {
       runtimePlatform: {
         operatingSystemFamily: OperatingSystemFamily.LINUX,
         cpuArchitecture: CpuArchitecture.ARM64
-      }
+      },
+      taskRole: taskRole
     });
     const appContainer = appTaskDefinition.addContainer('AppContainer', {
       containerName: `${this.prefix}-app-task`,
@@ -121,10 +131,23 @@ export class ChaosGameWebApp extends Construct {
           `curl -f http://localhost:${webappConfig.app.port}${webappConfig.app.healthCheckPath} || exit 1`
         ],
       },
-      portMappings:[{
-        containerPort: webappConfig.app.port,
-        protocol: Protocol.TCP,
-      }]
+      portMappings:[
+        {
+          containerPort: webappConfig.app.port,
+          protocol: Protocol.TCP,
+        }
+      ]
+    });
+    // Add the X-Ray daemon as a sidecar container
+    const appXray = appTaskDefinition.addContainer('xray', {
+      image: ContainerImage.fromEcrRepository(appImage.ecrRepo, 'xray-latest'),
+      cpu: 32,
+      memoryReservationMiB: 256,
+      essential: false,
+    });
+    appXray.addPortMappings({
+      containerPort: 2000,
+      protocol: Protocol.UDP,
     });
 
     this.appFargateService = new FargateService(this, 'AppFargateService', {
@@ -175,13 +198,12 @@ export class ChaosGameWebApp extends Construct {
           logGroup: webAppLogGroup,
           streamPrefix: `${this.prefix}-nginx-service`,
         }),
+        taskRole: taskRole
       },
       publicLoadBalancer: true,
     });
     nginx.targetGroup.configureHealthCheck({
       path: webappConfig.nginx.healthCheckPath,
-      // interval: Duration.seconds(30),
-      // unhealthyThresholdCount: 3,
     });
 
     // Add an incoming rule to the Application NSG to allow incoming traffic from the NSG of the Nginx load balancer

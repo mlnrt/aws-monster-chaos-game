@@ -109,6 +109,16 @@ export class WebAppImage extends Construct {
       dest: new ecrdeploy.DockerImageName(`${this.ecrRepo.repositoryUri}:app-latest`),
     });
 
+    // Docker Image for the X-Ray sidecar
+    const xrayAsset = new DockerImageAsset(this, 'XrayImage', {
+      directory: path.join(__dirname, '../../resources/services/xray'),
+      platform: Platform.LINUX_ARM64,
+    });
+    new ecrdeploy.ECRDeployment(this, 'DeployXrayImage', {
+      src: new ecrdeploy.DockerImageName(xrayAsset.imageUri),
+      dest: new ecrdeploy.DockerImageName(`${this.ecrRepo.repositoryUri}:xray-latest`),
+    });
+
     // Custom Resource to clean up ECR Repository
     if (removalPolicy === RemovalPolicy.DESTROY) {
       new cleanupEcrRepo(this, 'CleanupEcrRepo', {

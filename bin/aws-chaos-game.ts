@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { AwsChaosGameWebappStack } from '../lib/app/aws-chaos-game-webapp-stack';
+import { AwsChaosGameAppStack } from '../lib/aws-chaos-game-app-stack';
 import murmurhash = require('murmurhash');
 
 export function getShortHashFromString(strToConvert: string, hashLength: number = 6): string {
@@ -18,7 +18,7 @@ const prefix = `chaos-game-${branchHash}`;
 console.log('Prefix for all resources deployed by this stack: 👉 ', prefix);
 
 
-new AwsChaosGameWebappStack(app, `AwsChaosGameStack`, {
+new AwsChaosGameAppStack(app, `AwsChaosGameStack`, {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION

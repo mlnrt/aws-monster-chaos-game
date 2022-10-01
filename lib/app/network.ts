@@ -65,6 +65,7 @@ export class ChaosGameWebAppNetwork extends Construct {
     // - Interface Endpoint for ecr.docker
     // - Interface Endpoint for CloudWatch
     // - Interface Endpoint for CloudWatch logs (when logging to CloudWatch)
+    // - Interface Endpoint for X-Ray
     // https://aws.amazon.com/premiumsupport/knowledge-center/ecs-fargate-tasks-pending-state/
     // Add CloudWatch and CloudWatch Logs Endpoints for the Fargate Application containers in the isolated subnets
     this.vpc.addInterfaceEndpoint('CloudWatchEndpoint', {
@@ -86,12 +87,27 @@ export class ChaosGameWebAppNetwork extends Construct {
     // Add the ECR endpoint to be able to access the ECR repository containing the Docker images
     this.vpc.addInterfaceEndpoint('EcrApiEndpoint', {
       service: InterfaceVpcEndpointAwsService.ECR,
+      subnets: {
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      },
     });
 
     this.vpc.addInterfaceEndpoint('EcrDockerEndpoint', {
       service: InterfaceVpcEndpointAwsService.ECR_DOCKER,
+      subnets: {
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      },
     });
 
+    // Add the X-Ray endpoint to be able to send traces to X-Ray
+    this.vpc.addInterfaceEndpoint('XRayEndpoint', {
+      service: InterfaceVpcEndpointAwsService.XRAY,
+      subnets: {
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      },
+    });
+
+    // Add the S3 Gateway Endpoint
     this.vpc.addGatewayEndpoint('S3Endpoint', {
       service: GatewayVpcEndpointAwsService.S3,
       subnets: [{
