@@ -1,4 +1,4 @@
-FROM public.ecr.aws/nginx/nginx:1.23-alpine-arm64v8
+FROM public.ecr.aws/nginx/nginx:alpine-arm64v8
 # NGINX configuration
 ARG nginx_port
 ARG nginx_health_check_path

@@ -1,5 +1,5 @@
 import { Construct } from 'constructs';
-import { RemovalPolicy, Duration } from 'aws-cdk-lib';
+import { RemovalPolicy, Duration, Tags } from 'aws-cdk-lib';
 import { Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { RetentionDays, LogGroup } from 'aws-cdk-lib/aws-logs';
 import { IVpc, SubnetType, Port } from 'aws-cdk-lib/aws-ec2';
@@ -14,6 +14,7 @@ import {
   OperatingSystemFamily,
   AwsLogDriver,
   Protocol,
+  PropagatedTagSource,
 } from 'aws-cdk-lib/aws-ecs';
 import { IApplicationLoadBalancer, IApplicationListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
@@ -99,7 +100,7 @@ export class ChaosGameWebApp extends Construct {
       assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
     });
     taskRole.addManagedPolicy({
-      managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy',
+      managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
     });
     taskRole.addManagedPolicy({
       managedPolicyArn: 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
@@ -116,8 +117,9 @@ export class ChaosGameWebApp extends Construct {
         operatingSystemFamily: OperatingSystemFamily.LINUX,
         cpuArchitecture: CpuArchitecture.ARM64
       },
-      taskRole: taskRole
+      taskRole: taskRole,
     });
+
     const appContainer = appTaskDefinition.addContainer('AppContainer', {
       containerName: `${this.prefix}-app-task`,
       image: ContainerImage.fromEcrRepository(appImage.ecrRepo, 'app-latest'),
@@ -131,23 +133,21 @@ export class ChaosGameWebApp extends Construct {
           `curl -f http://localhost:${webappConfig.app.port}${webappConfig.app.healthCheckPath} || exit 1`
         ],
       },
-      portMappings:[
-        {
+      portMappings:[{
           containerPort: webappConfig.app.port,
           protocol: Protocol.TCP,
-        }
-      ]
+      }]
     });
     // Add the X-Ray daemon as a sidecar container
-    const appXray = appTaskDefinition.addContainer('xray', {
+    appTaskDefinition.addContainer('xray', {
       image: ContainerImage.fromEcrRepository(appImage.ecrRepo, 'xray-latest'),
       cpu: 32,
       memoryReservationMiB: 256,
       essential: false,
-    });
-    appXray.addPortMappings({
-      containerPort: 2000,
-      protocol: Protocol.UDP,
+      portMappings: [{
+        containerPort: 2000,
+        protocol: Protocol.UDP,
+      }],
     });
 
     this.appFargateService = new FargateService(this, 'AppFargateService', {
@@ -169,7 +169,9 @@ export class ChaosGameWebApp extends Construct {
         containerPort: webappConfig.app.port,
         dnsTtl: Duration.seconds(30),
       },
+      propagateTags: PropagatedTagSource.SERVICE,
     });
+    Tags.of(this.appFargateService).add('FargateService', `${this.prefix}-app`);
 
     //
     // Fargate Service for the Application
@@ -201,7 +203,10 @@ export class ChaosGameWebApp extends Construct {
         taskRole: taskRole
       },
       publicLoadBalancer: true,
+      propagateTags: PropagatedTagSource.SERVICE,
     });
+
+    // Configure the Health Check for the ALB
     nginx.targetGroup.configureHealthCheck({
       path: webappConfig.nginx.healthCheckPath,
     });
@@ -212,6 +217,9 @@ export class ChaosGameWebApp extends Construct {
       Port.tcp(webappConfig.app.port),
       'Allow Nginx to access the App'
     );
+
+    // Add Fargate Service and Tasks Tags
+    Tags.of(nginx.service).add('FargateService', `${this.prefix}-nginx`);
 
     this.nginxLoadBalancer = nginx.loadBalancer;
     this.nginxListener = nginx.listener;
