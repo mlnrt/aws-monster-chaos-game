@@ -1,14 +1,48 @@
-# Welcome to your CDK TypeScript project
+# The AWS Chaos Game
+This is a chaos engineering game for AWS developed using the AWS CDK. It includes:
+* A 3 tier 3 AZs simple web application stack
+* A chaos engineering stack to inject failures into the web application stack
+* An IoT Stack to register an Adafruit PyPortal microcontroller to AWS IoT Core and trigger chaos experiments 
+* A Circuit Python Game for Adafruit PyPortal microcontroller to play the game
 
-This is a blank project for CDK development with TypeScript.
+## The Architecture
+![](doc/images/aws-chaos-game.jpg)
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## What are the Prerequisites?
+The list below is for _Windows_ environment
+* clone this repository
+* The AWS CLI ([documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html))
+* Docker Desktop ([Documentation](https://docs.docker.com/desktop/windows/install/))
+* NPM and Node.js ([Documenttaion](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm))
+* The AWS CDK: `npm install -g aws-cdk`
 
-## Useful commands
+## Deploy the Stacks on AWS
+Once you have all the prerequisites, go in the repository folder and perform the steps below.
+### Deploy the Stacks on AWS
+If you have multiple AWS CLI configuration profiles use the `--profile <your profile name>` to use it for authentication.
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+Bootsrap the CDK
+```
+cdk bootstrap aws://<account number>/<aws region>
+```
+
+e.g.
+```
+cdk bootstrap aws://123456789012/eu-west-1
+```
+
+
+Install the Node.js modules defined in the package.json file
+```
+npm install
+```
+
+Verify the stack before deployment
+```
+cdk synth
+```
+
+Deploy the stack
+```
+cdk cdk destroy --all
+```
