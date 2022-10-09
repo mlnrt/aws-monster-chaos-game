@@ -22,8 +22,9 @@ export class ChaosGameFis extends Construct {
     super(scope, id);
 
     this.prefix = props.prefix;
+    this.removalPolicy = this.removalPolicy || RemovalPolicy.DESTROY;
 
-    const fisIamRoles = new ChaosGameIamFis(this, 'FisIamRole', {
+    const fisIamRoles = new ChaosGameIamFis(this, 'IamRole', {
       prefix: this.prefix,
     });
 
@@ -54,7 +55,7 @@ export class ChaosGameFis extends Construct {
       }));
 
       // Experiment to stop ALL tasks of one of the Fargate Service
-      const fisStopAllExperiment = new CfnExperimentTemplate(this, `Fis${task}StopAllExperiment`, {
+      const fisStopAllExperiment = new CfnExperimentTemplate(this, `${task}StopAllExperiment`, {
         description: `FIS experiment to stop All ECS Fargate tasks from the ${task} service`,
         roleArn: fisIamRoles.ecsExperimentRole.roleArn,
         stopConditions: [
@@ -89,7 +90,7 @@ export class ChaosGameFis extends Construct {
       //this.experiments.push(fisStopAllExperiment);
 
       // Experiment to stop ONE task randomly of one of the Fargate Service
-      const fisStopRandomExperiment = new CfnExperimentTemplate(this, `Fis${task}StopOneExperiment`, {
+      const fisStopRandomExperiment = new CfnExperimentTemplate(this, `${task}StopOneExperiment`, {
         description: `FIS experiment to stop one ECS Fargate tasks from the ${task} service`,
         roleArn: fisIamRoles.ecsExperimentRole.roleArn,
         stopConditions: [

@@ -1,8 +1,8 @@
 import { Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { ChaosGameFis } from './chaos/fis';
-import { IVpc } from "aws-cdk-lib/aws-ec2";
-import { ICluster } from "aws-cdk-lib/aws-ecs";
+import { ChaosGameDynamodbTable } from "./chaos/dynamodb";
+import { ChaosGameLambda } from "./chaos/lambda";
 
 export interface AwsChaosGameFisStackProps extends StackProps {
   readonly prefix: string;
@@ -20,7 +20,14 @@ export class AwsChaosGameFisStack extends Stack {
     this.prefix = props.prefix;
     this.removalPolicy = props.removalPolicy || RemovalPolicy.DESTROY;
 
-    this.fis = new ChaosGameFis(this, 'WebApp', {
+    // DynamoDB Table to store the experiment results
+    const experimentTable = new ChaosGameDynamodbTable(this, 'FisExperimentTable', {
+      prefix: this.prefix,
+      removalPolicy: this.removalPolicy,
+    });
+
+    // Create the Fault Injection Simulator Experiments
+    this.fis = new ChaosGameFis(this, 'Fis', {
       prefix: this.prefix,
       removalPolicy: this.removalPolicy,
     });

@@ -19,7 +19,7 @@ const prefix = `chaos-game-${branchHash}`;
 console.log('Prefix for all resources deployed by this stack: 👉 ', prefix);
 
 
-new AwsChaosGameAppStack(app, `AwsChaosGameStack`, {
+new AwsChaosGameAppStack(app, `AwsChaosGameAppStack`, {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION

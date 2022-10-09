@@ -17,7 +17,7 @@ export class ChaosGameIamFis extends Construct {
     this.prefix = props.prefix;
 
     // Policy to allow FIS to use the AWS FIS actions for fault injection for experiments part of this project
-    const mainFisPolicy = new Policy(this, 'FisPolicy', {
+    const mainFisPolicy = new Policy(this, 'Policy', {
       policyName: `${this.prefix}-fis-policy`,
       document: new PolicyDocument({
         statements: [
