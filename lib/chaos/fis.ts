@@ -39,11 +39,16 @@ export class ChaosGameFis extends Construct {
         retention: RetentionDays.ONE_WEEK,
         removalPolicy: this.removalPolicy,
       });
+      console.log(`${fisFargateLogs.logGroupArn.slice(0,-1)}log-stream:*`);
       fisFargateLogs.addToResourcePolicy(new PolicyStatement({
         effect: Effect.ALLOW,
         principals:[new ServicePrincipal('delivery.logs.amazonaws.com')],
         actions: ['logs:PutLogEvents', 'logs:CreateLogStream'],
-        resources: [`${fisFargateLogs.logGroupArn}:log-stream:*`],
+        // The ARN of a log group is in the form of arn:aws:logs:region:account-id:log-group:log-group-name:*
+        // so we must strip the last "*" from the ARN for the log stream ARN to be correct...
+        // `${fisFargateLogs.logGroupArn.slice(0,-1)}log-stream:*` -> but does not work
+        // `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-${task.toLowerCase()}:log-stream:*`
+        resources: [`arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-${task.toLowerCase()}:log-stream:*`],
         conditions: {
           StringEquals: {
             'aws:SourceAccount': Stack.of(this).account,
