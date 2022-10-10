@@ -19,7 +19,7 @@ const prefix = `chaos-game-${branchHash}`;
 console.log('Prefix for all resources deployed by this stack: 👉 ', prefix);
 
 
-new AwsChaosGameAppStack(app, `AwsChaosGameAppStack`, {
+const appStack = new AwsChaosGameAppStack(app, `AwsChaosGameAppStack`, {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION
@@ -30,12 +30,14 @@ new AwsChaosGameAppStack(app, `AwsChaosGameAppStack`, {
   }
 });
 
-// TODO: Make the FIS Stack dependent of the App Stack
-// TODO: use the exports of the App Stack
-new AwsChaosGameFisStack(app, `AwsChaosGameFisStack`, {
+const fisStack = new AwsChaosGameFisStack(app, `AwsChaosGameFisStack`, {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION
   },
   prefix: prefix,
+  scoreTable: appStack.scoreTable,
+  tags: {
+    Project: prefix,
+  }
 });
