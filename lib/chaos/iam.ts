@@ -39,10 +39,20 @@ export class ChaosGameIamFis extends Construct {
             resources: ['*'],
           }),
           new PolicyStatement({
-            sid: 'AllowCloudWatchLogsActions',
+            sid: 'AllowCloudWatchLogGroupsActions',
             effect: Effect.ALLOW,
             actions: ['logs:PutResourcePolicy', 'logs:DescribeResourcePolicies', 'logs:DescribeLogGroups'],
-            resources: [`arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-*`],
+            resources: [
+              `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-*`
+            ],
+          }),
+          new PolicyStatement({
+            sid: 'AllowCloudWatchLogStreamsActions',
+            effect: Effect.ALLOW,
+            actions: ['logs:PutLogEvents', 'logs:CreateLogStream'],
+            resources: [
+              `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-*:log-stream:*`
+            ],
           }),
         ],
       })

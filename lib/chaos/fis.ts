@@ -35,24 +35,10 @@ export class ChaosGameFis extends Construct {
     const fargateTasks = ['App', 'Nginx'];
     fargateTasks.forEach((task) => {
       const fisFargateLogs = new LogGroup(this, `${task}ServiceLogGroup`, {
-        logGroupName: `/fis/${this.prefix}-fargate-${task.toLowerCase()}`,
+        logGroupName: `/fis/${this.prefix}-${task.toLowerCase()}`,
         retention: RetentionDays.ONE_WEEK,
         removalPolicy: this.removalPolicy,
       });
-      fisFargateLogs.addToResourcePolicy(new PolicyStatement({
-        effect: Effect.ALLOW,
-        principals:[new ServicePrincipal('delivery.logs.amazonaws.com')],
-        actions: ['logs:PutLogEvents', 'logs:CreateLogStream'],
-        resources: [`${fisFargateLogs.logGroupArn}:log-stream:*`],
-        conditions: {
-          StringEquals: {
-            'aws:SourceAccount': Stack.of(this).account,
-          },
-          ArnLike: {
-            'aws:SourceArn': `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:*`,
-          }
-        }
-      }));
 
       // Experiment to stop ALL tasks of one of the Fargate Service
       const fisStopAllExperiment = new CfnExperimentTemplate(this, `${task}StopAllExperiment`, {
