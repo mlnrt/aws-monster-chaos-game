@@ -79,7 +79,10 @@ export class ChaosGameFis extends Construct {
             }
           }
         },
-        tags: {Name: `Terminate All ECS Fargate Task from the ${task} Service`},
+        tags: {
+          Name: `${this.prefix}-Terminate All ECS Fargate Task from the ${task} Service`,
+          Project: this.prefix,
+        },
         logConfiguration: {
           logSchemaVersion: 1,
           cloudWatchLogsConfiguration: {
@@ -90,7 +93,7 @@ export class ChaosGameFis extends Construct {
       //this.experiments.push(fisStopAllExperiment);
 
       // Experiment to stop ONE task randomly of one of the Fargate Service
-      const fisStopRandomExperiment = new CfnExperimentTemplate(this, `${task}StopOneExperiment`, {
+      const fisStopOneExperiment = new CfnExperimentTemplate(this, `${task}StopOneExperiment`, {
         description: `FIS experiment to stop one ECS Fargate tasks from the ${task} service`,
         roleArn: fisIamRoles.ecsExperimentRole.roleArn,
         stopConditions: [
@@ -114,7 +117,10 @@ export class ChaosGameFis extends Construct {
             }
           }
         },
-        tags: {Name: `Terminate one ECS Fargate Task from the ${task} Service`},
+        tags: {
+          Name: `${this.prefix}-Terminate one ECS Fargate Task from the ${task} Service`,
+          Project: this.prefix,
+        },
         logConfiguration: {
           logSchemaVersion: 1,
           cloudWatchLogsConfiguration: {

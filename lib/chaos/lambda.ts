@@ -1,3 +1,4 @@
+import { Construct } from 'constructs';
 import { PythonLayerVersion } from '@aws-cdk/aws-lambda-python-alpha';
 import { Duration } from 'aws-cdk-lib';
 import {
@@ -20,7 +21,6 @@ import {
   VersionOptions,
 } from 'aws-cdk-lib/aws-lambda';
 import { ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
-import { Construct } from 'constructs';
 
 interface LambdaFunctionProps {
   functionName: string;
@@ -45,6 +45,7 @@ interface ChaosGameLambdaProps {
   readonly role?: IRole;
   readonly timeout?: Duration;
   readonly memorySize?: number;
+  readonly tracing?: Tracing;
   readonly runtime?: Runtime;
   readonly architecture?: Architecture;
   readonly additionalPolicyStatements?: PolicyStatement[];
@@ -74,7 +75,7 @@ export class ChaosGameLambda extends Construct {
       handler: 'main.lambda_handler',
       code: Code.fromAsset(this.codePath),
       logRetention: RetentionDays.ONE_WEEK,
-      tracing: Tracing.ACTIVE,
+      tracing: props.tracing || Tracing.DISABLED,
     };
 
     if (props.role) {

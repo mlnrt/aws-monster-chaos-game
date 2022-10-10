@@ -25,7 +25,7 @@ export class ChaosGameIamFis extends Construct {
             sid: 'AllowFISExperimentRoleFaultInjectionActions',
             effect: Effect.ALLOW,
             actions: ['fis:InjectApiInternalError', 'fis:InjectApiThrottleError', 'fis:InjectApiUnavailableError'],
-            resources: [`arn:aws:fis:${Stack.of(this).region}:${Stack.of(this).account}:experiment/${this.prefix}*`],
+            resources: [`arn:aws:fis:${Stack.of(this).region}:${Stack.of(this).account}:experiment/*`],
             conditions: {
               StringEquals: {
                 'aws:ResourceTag/Project': this.prefix,

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "trigger_experiment"
+name = "check_experiment"
 version = "0.1.0"
 description = ""
 authors = ["Matthieu Lienart <matthieu.lienart@amanox.ch>"]
