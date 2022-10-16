@@ -1,11 +1,8 @@
 import { Construct } from 'constructs';
-import {RemovalPolicy, Stack} from "aws-cdk-lib";
-import { IVpc } from "aws-cdk-lib/aws-ec2";
-import { ICluster } from "aws-cdk-lib/aws-ecs";
-import {PolicyStatement, ServicePrincipal, Effect} from 'aws-cdk-lib/aws-iam';
+import { RemovalPolicy } from "aws-cdk-lib";
 import { CfnExperimentTemplate } from "aws-cdk-lib/aws-fis";
 import { ChaosGameIamFis } from "./iam";
-import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { ChaosGameFisFargateExperiment, ExperimentResourceType } from "./experiment";
 
 export interface ChaosGameFisProps {
   readonly prefix: string;
@@ -34,106 +31,15 @@ export class ChaosGameFis extends Construct {
     // TODO: use the exports of the previous stack
     const fargateTasks = ['App', 'Nginx'];
     fargateTasks.forEach((task) => {
-      const fisFargateLogs = new LogGroup(this, `${task}ServiceLogGroup`, {
-        logGroupName: `/fis/${this.prefix}-${task.toLowerCase()}`,
-        retention: RetentionDays.ONE_WEEK,
+      new ChaosGameFisFargateExperiment(this, task, {
+        prefix: this.prefix,
+        name: task,
         removalPolicy: this.removalPolicy,
+        fisIamRoles: fisIamRoles,
+        experimentResourceType: ExperimentResourceType.ECS_STOP_TASK,
+        targetTask: task,
       });
-      console.log(`${fisFargateLogs.logGroupArn.slice(0,-1)}log-stream:*`);
-      fisFargateLogs.addToResourcePolicy(new PolicyStatement({
-        effect: Effect.ALLOW,
-        principals:[new ServicePrincipal('delivery.logs.amazonaws.com')],
-        actions: ['logs:PutLogEvents', 'logs:CreateLogStream'],
-        // The ARN of a log group is in the form of arn:aws:logs:region:account-id:log-group:log-group-name:*
-        // so we must strip the last "*" from the ARN for the log stream ARN to be correct...
-        // `${fisFargateLogs.logGroupArn.slice(0,-1)}log-stream:*` -> but does not work
-        // `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-${task.toLowerCase()}:log-stream:*`
-        resources: [`arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-${task.toLowerCase()}:log-stream:*`],
-        conditions: {
-          StringEquals: {
-            'aws:SourceAccount': Stack.of(this).account,
-          },
-          ArnLike: {
-            'aws:SourceArn': `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:*`,
-          }
-        }
-      }));
 
-      // Experiment to stop ALL tasks of one of the Fargate Service
-      const fisStopAllExperiment = new CfnExperimentTemplate(this, `${task}StopAllExperiment`, {
-        description: `FIS experiment to stop All ECS Fargate tasks from the ${task} service`,
-        roleArn: fisIamRoles.ecsExperimentRole.roleArn,
-        stopConditions: [
-          {source: 'none'}
-        ],
-        targets: {
-          'fargateTasks': {
-            resourceType: 'aws:ecs:task',
-            resourceTags: {
-              'FargateService': `${this.prefix}-${task.toLowerCase()}`
-            },
-            selectionMode: 'ALL',
-          }
-        },
-        actions: {
-          'stopFargateTasks': {
-            actionId: 'aws:ecs:stop-task',
-            parameters: {},
-            targets: {
-              'Tasks': 'fargateTasks',
-            }
-          }
-        },
-        tags: {
-          Name: `${this.prefix}-Terminate All ECS Fargate Task from the ${task} Service`,
-          Project: this.prefix,
-        },
-        logConfiguration: {
-          logSchemaVersion: 1,
-          cloudWatchLogsConfiguration: {
-            LogGroupArn: fisFargateLogs.logGroupArn,
-          }
-        }
-      });
-      //this.experiments.push(fisStopAllExperiment);
-
-      // Experiment to stop ONE task randomly of one of the Fargate Service
-      const fisStopOneExperiment = new CfnExperimentTemplate(this, `${task}StopOneExperiment`, {
-        description: `FIS experiment to stop one ECS Fargate tasks from the ${task} service`,
-        roleArn: fisIamRoles.ecsExperimentRole.roleArn,
-        stopConditions: [
-          {source: 'none'}
-        ],
-        targets: {
-          'fargateTasks': {
-            resourceType: 'aws:ecs:task',
-            resourceTags: {
-              'FargateService': `${this.prefix}-${task.toLowerCase()}`
-            },
-            selectionMode: 'COUNT(1)',
-          }
-        },
-        actions: {
-          'stopFargateTasks': {
-            actionId: 'aws:ecs:stop-task',
-            parameters: {},
-            targets: {
-              'Tasks': 'fargateTasks',
-            }
-          }
-        },
-        tags: {
-          Name: `${this.prefix}-Terminate one ECS Fargate Task from the ${task} Service`,
-          Project: this.prefix,
-        },
-        logConfiguration: {
-          logSchemaVersion: 1,
-          cloudWatchLogsConfiguration: {
-            LogGroupArn: fisFargateLogs.logGroupArn,
-          }
-        }
-      });
-      //this.experiments.push(fisStopRandomExperiment);
     });
   }
 }
