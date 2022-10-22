@@ -10,7 +10,6 @@ import {
   Choice,
   Condition,
   Succeed,
-  Fail,
   CustomState
 } from 'aws-cdk-lib/aws-stepfunctions';
 import { ITable } from 'aws-cdk-lib/aws-dynamodb';
@@ -21,6 +20,7 @@ export interface ChaosGameFisStateMachineProps {
   readonly prefix: string;
   readonly removalPolicy: RemovalPolicy;
   readonly scoreTable: ITable;
+  readonly appUrl : string;
 }
 
 export class ChaosGameFisStateMachine extends Construct {
@@ -80,6 +80,19 @@ export class ChaosGameFisStateMachine extends Construct {
       ]
     });
 
+    // Create the Lambda function used to query the Application during the experiment
+    const queryAppLambda = new ChaosGameLambda(this, 'QueryAppLambda', {
+      prefix: this.prefix,
+      name: 'query-app',
+      codePath: 'resources/lambdas/query_app',
+      memorySize: 128,
+      timeout: Duration.seconds(20),
+      environment: {
+        APP_URL: props.appUrl,
+        NB_TRIES: "20",
+      }
+    });
+
     //
     // AWS Step Function State Machine for the FIS Experiments
     //
@@ -90,9 +103,12 @@ export class ChaosGameFisStateMachine extends Construct {
     });
 
     //Create some Tasks for the State Machine
-    const waitX = new Wait(this, 'Wait', { time: WaitTime.duration(Duration.seconds(30))});
+    const wait10 = new Wait(this, 'wait10', { time: WaitTime.duration(Duration.seconds(10))});
+    const checkStatus = new LambdaInvoke(this, 'Check the Experiment Status', {
+      lambdaFunction: checkExperimentLambda.function,
+      payloadResponseOnly: true
+    });
     const success = new Succeed(this, 'Experiment Finished');
-    const fail = new Fail(this, 'Experiment Failed');
     const winStateJson = {
       Type: 'Task',
       Resource: 'arn:aws:states:::dynamodb:updateItem',
@@ -122,19 +138,24 @@ export class ChaosGameFisStateMachine extends Construct {
     const smDefinition = new LambdaInvoke(this, 'Trigger the Experiment', {
       lambdaFunction: triggerExperimentLambda.function,
       payloadResponseOnly: true,
-    }).next(waitX)
-      .next(new LambdaInvoke(this, 'Check the Experiment Status', {
-        lambdaFunction: checkExperimentLambda.function,
-        payloadResponseOnly: true
-      }))
+    }).next(wait10)
+      .next(new LambdaInvoke(this, 'Check the Application', {
+        lambdaFunction: queryAppLambda.function,
+        payloadResponseOnly: true,
+        retryOnServiceExceptions: false,
+      }).addCatch(checkStatus, {errors: ['States.ALL'], resultPath: '$.error'}))
+      .next(checkStatus)
       .next(new Choice(this, 'Experiment Finished?')
         .when(Condition.or(
           Condition.stringEquals('$.experimentStatus', 'initiating'),
           Condition.stringEquals('$.experimentStatus', 'pending'),
           Condition.stringEquals('$.experimentStatus', 'running')
-        ), waitX)
+        ), wait10)
         .when(Condition.stringEquals('$.experimentStatus', 'completed'), updateWinDB)
-        .when(Condition.stringEquals('$.experimentStatus', 'failed'), updateLooseDB)
+        .when(Condition.or(
+          Condition.stringEquals('$.experimentStatus', 'failed'),
+          Condition.stringEquals('$.experimentStatus', 'stopped')
+        ), updateLooseDB)
         .otherwise(success));
 
     // Create the State Machine based on the definition
