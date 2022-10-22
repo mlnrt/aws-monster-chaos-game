@@ -154,6 +154,7 @@ export class ChaosGameFisStateMachine extends Construct {
         .when(Condition.stringEquals('$.experimentStatus', 'completed'), updateWinDB)
         .when(Condition.or(
           Condition.stringEquals('$.experimentStatus', 'failed'),
+          Condition.stringEquals('$.experimentStatus', 'stopping'),
           Condition.stringEquals('$.experimentStatus', 'stopped')
         ), updateLooseDB)
         .otherwise(success));
