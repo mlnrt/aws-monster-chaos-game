@@ -16,7 +16,7 @@ import {
   Protocol,
   PropagatedTagSource,
 } from 'aws-cdk-lib/aws-ecs';
-import { IApplicationLoadBalancer, IApplicationListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { ApplicationLoadBalancer, IApplicationListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
 import { IPrivateDnsNamespace, PrivateDnsNamespace, DnsRecordType } from 'aws-cdk-lib/aws-servicediscovery';
 import { ChaosGameWebAppNetwork } from './network';
@@ -34,11 +34,12 @@ export interface ChaosGameWebAppProps {
 export class ChaosGameWebApp extends Construct {
   public readonly prefix: string;
   public readonly namespace: string;
+  public readonly appPath: string;
   public readonly removalPolicy: RemovalPolicy;
   public readonly vpc: IVpc;
   public readonly webAppNamespace: IPrivateDnsNamespace;
   public readonly ecsCluster: ICluster;
-  public readonly nginxLoadBalancer: IApplicationLoadBalancer;
+  public readonly loadBalancer: ApplicationLoadBalancer;
   public readonly nginxListener: IApplicationListener;
   public readonly nginxFargateService: IFargateService;
   public readonly appFargateService: IFargateService;
@@ -48,6 +49,7 @@ export class ChaosGameWebApp extends Construct {
 
     this.prefix = props.prefix;
     this.namespace = webappConfig.app.namespace;
+    this.appPath = webappConfig.app.path;
     this.removalPolicy = this.removalPolicy || RemovalPolicy.DESTROY;
 
     //
@@ -221,7 +223,7 @@ export class ChaosGameWebApp extends Construct {
     // Add Fargate Service and Tasks Tags
     Tags.of(nginx.service).add('FargateService', `${this.prefix}-nginx`);
 
-    this.nginxLoadBalancer = nginx.loadBalancer;
+    this.loadBalancer = nginx.loadBalancer;
     this.nginxListener = nginx.listener;
     this.nginxFargateService = nginx.service;
   }

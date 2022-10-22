@@ -3,16 +3,19 @@ import { RemovalPolicy } from "aws-cdk-lib";
 import { CfnExperimentTemplate } from "aws-cdk-lib/aws-fis";
 import { ChaosGameIamFis } from "./iam";
 import { ChaosGameFisFargateExperiment, ExperimentResourceType } from "./experiment";
+import { ChaosGameCwAlarm } from "./cloudwatch";
 
 export interface ChaosGameFisProps {
   readonly prefix: string;
   readonly removalPolicy?: RemovalPolicy;
+  readonly stopAlarm: ChaosGameCwAlarm;
 }
 
 export class ChaosGameFis extends Construct {
   public readonly prefix: string;
   public readonly namespace: string;
   public readonly removalPolicy: RemovalPolicy;
+  public readonly stopAlarm: ChaosGameCwAlarm;
   public readonly experiments: CfnExperimentTemplate[];
 
   constructor(scope: Construct, id: string, props: ChaosGameFisProps) {
@@ -20,6 +23,7 @@ export class ChaosGameFis extends Construct {
 
     this.prefix = props.prefix;
     this.removalPolicy = this.removalPolicy || RemovalPolicy.DESTROY;
+    this.stopAlarm = props.stopAlarm;
 
     const fisIamRoles = new ChaosGameIamFis(this, 'IamRole', {
       prefix: this.prefix,
@@ -38,6 +42,7 @@ export class ChaosGameFis extends Construct {
         fisIamRoles: fisIamRoles,
         experimentResourceType: ExperimentResourceType.ECS_STOP_TASK,
         targetTask: task,
+        stopAlarm: this.stopAlarm,
       });
 
     });

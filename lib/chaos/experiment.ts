@@ -2,8 +2,9 @@ import { Construct } from 'constructs';
 import { RemovalPolicy, Stack } from "aws-cdk-lib";
 import { IRole, PolicyStatement, ServicePrincipal, Effect } from 'aws-cdk-lib/aws-iam';
 import { CfnExperimentTemplate } from "aws-cdk-lib/aws-fis";
+import { ILogGroup, LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { ChaosGameIamFis } from "./iam";
-import {ILogGroup, LogGroup, RetentionDays} from "aws-cdk-lib/aws-logs";
+import { ChaosGameCwAlarm } from "./cloudwatch";
 
 export enum ExperimentResourceType {
   ECS_STOP_TASK = 'aws:ecs:task',
@@ -16,6 +17,7 @@ interface ChaosGameFisExperimentProps {
   readonly removalPolicy?: RemovalPolicy;
   readonly fisIamRoles: ChaosGameIamFis;
   readonly experimentResourceType: ExperimentResourceType;
+  readonly stopAlarm: ChaosGameCwAlarm;
 }
 
 class ChaosGameFisExperiment extends Construct {
@@ -70,6 +72,11 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
         targets: {
           'Tasks': 'fargateTasks',
         }
+      },
+      'waitFewMins': {
+        actionId: 'aws:fis:wait',
+        parameters: {'duration': 'PT3M'},
+        startAfter: ['stopFargateTasks'],
       }
     }
 
@@ -98,7 +105,10 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
       description: `FIS experiment to stop All ECS Fargate tasks from the ${this.targetTask} service`,
       roleArn: props.fisIamRoles.ecsExperimentRole.roleArn,
       stopConditions: [
-        {source: 'none'}
+        {
+          source: 'aws:cloudwatch:alarm',
+          value: props.stopAlarm.alarm.alarmArn,
+        }
       ],
       targets: {
         'fargateTasks': {
@@ -123,7 +133,10 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
       description: `FIS experiment to stop one ECS Fargate tasks from the ${this.targetTask} service`,
       roleArn: props.fisIamRoles.ecsExperimentRole.roleArn,
       stopConditions: [
-        {source: 'none'}
+        {
+          source: 'aws:cloudwatch:alarm',
+          value: props.stopAlarm.alarm.alarmArn,
+        }
       ],
       targets: {
         'fargateTasks': {
@@ -138,6 +151,71 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
       logConfiguration: logConfiguration,
       tags: {
         Name: `${this.prefix}-Terminate one ECS Fargate Task from the ${this.targetTask} Service`,
+        Project: this.prefix,
+      }
+    });
+  }
+}
+
+export interface ChaosGameFisApiExperimentProps extends ChaosGameFisExperimentProps {
+  readonly targetService: string;
+  readonly targetIamRoles: IRole[];
+}
+
+export class ChaosGameFisApiExperiment extends ChaosGameFisExperiment {
+  public readonly targetService: string;
+  public readonly targetIamRoles: IRole[];
+
+  constructor(scope: Construct, id: string, props: ChaosGameFisApiExperimentProps) {
+    super(scope, id, props);
+
+    this.targetService = props.targetService;
+    this.targetIamRoles = props.targetIamRoles;
+
+    //
+    // Fis Experiment on the ECS Fargate App Tasks
+    //
+    const logConfiguration = {
+      logSchemaVersion: 1,
+      cloudWatchLogsConfiguration: {
+        LogGroupArn: this.logGroup.logGroupArn,
+      }
+    };
+
+    // Experiment to inject an API internal error
+    const fisApiInternalErrorExperiment = new CfnExperimentTemplate(this, 'ApiInternalErrorExperiment', {
+      description: `FIS experiment to inject an API internal error on the ${this.targetService} service`,
+      roleArn: props.fisIamRoles.ecsExperimentRole.roleArn,
+      stopConditions: [
+        {
+          source: 'aws:cloudwatch:alarm',
+          value: props.stopAlarm.alarm.alarmArn,
+        }
+      ],
+      targets: {
+        'internalErrorRole': {
+          resourceType: this.experimentResourceType,
+          resourceArns: this.targetIamRoles.map(role => role.roleArn),
+          selectionMode: 'ALL',
+        }
+      },
+      actions: {
+        'injectApiInternalError': {
+          actionId: 'aws:fis:inject-api-internal-error',
+          parameters: {
+            'service': 'ec2',
+            'operations': 'DescribeInstances',
+            'percentage': '100',
+            'duration': 'PT1M',
+          },
+          targets: {
+            'Roles': 'internalErrorRole',
+          }
+        }
+      },
+      logConfiguration: logConfiguration,
+      tags: {
+        Name: `${this.prefix}-Inject an API internal error on the ${this.targetService} Service`,
         Project: this.prefix,
       }
     });
