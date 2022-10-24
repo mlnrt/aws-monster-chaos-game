@@ -160,7 +160,7 @@ export class ChaosGameFisStateMachine extends Construct {
         .otherwise(success));
 
     // Create the State Machine based on the definition
-    this.stateMachine = new StateMachine(this, 'fisProcess', {
+    const stateMachine = new StateMachine(this, 'fisProcess', {
       definition: smDefinition,
       stateMachineName: `${this.prefix}-fis-process`,
       timeout: Duration.minutes(5),
@@ -169,12 +169,13 @@ export class ChaosGameFisStateMachine extends Construct {
         destination: fisStateMachineLogGroup,
       },
     });
-    this.stateMachine.addToRolePolicy(
+    stateMachine.addToRolePolicy(
       new PolicyStatement({
         effect: Effect.ALLOW,
         actions: ['dynamodb:UpdateItem'],
         resources: [props.scoreTable.tableArn],
       }
     ));
+    this.stateMachine = stateMachine;
   }
 }
