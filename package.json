@@ -26,6 +26,7 @@
     "@aws-cdk/aws-lambda-python-alpha": "^2.47.0-alpha.0",
     "aws-cdk-lib": "^2.47.0",
     "cdk-ecr-deployment": "^2.5.6",
+    "cdk-iot-core-certificates": "^1.0.97",
     "constructs": "^10.1.138",
     "murmurhash": "^2.0.1",
     "source-map-support": "^0.5.21"

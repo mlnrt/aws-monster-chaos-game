@@ -2,7 +2,8 @@ import { Construct } from 'constructs';
 import { Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { ITopicRule } from "@aws-cdk/aws-iot-alpha";
-import { ChaosGameIot } from "./iot/iot";
+import { ChaosGameIotTopic } from "./iot/iot-rule";
+import { ChaosGameIotCore } from "./iot/iot-core";
 
 export interface AwsChaosGameIotStackProps extends StackProps {
   readonly prefix: string;
@@ -21,12 +22,24 @@ export class AwsChaosGameIotStack extends Stack {
     this.prefix = props.prefix;
     this.removalPolicy = props.removalPolicy || RemovalPolicy.DESTROY;
 
-    // Create the IoT Rule to start the FIS state machine
-    const iotTopicRule = new ChaosGameIot(this, 'Iot', {
+    //
+    // Iot Topic
+    //
+    // Create the IoT Topic Rule to start the FIS state machine
+    const iotTopicRule = new ChaosGameIotTopic(this, 'Topic', {
       prefix: this.prefix,
       removalPolicy: this.removalPolicy,
       fisStateMachine: props.fisStateMachine,
     });
     this.iotTopicRule = iotTopicRule.topicRule;
+
+    //
+    // Iot Core
+    //
+    new ChaosGameIotCore(this, 'Core', {
+      prefix: this.prefix,
+      removalPolicy: this.removalPolicy,
+      iotTopicName: iotTopicRule.iotTopicName,
+    })
   }
 }
