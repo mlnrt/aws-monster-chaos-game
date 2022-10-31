@@ -56,6 +56,8 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
 
     this.targetTask = props.targetTask;
 
+    const stack = Stack.of(this);
+
     //
     // Fis Experiment on the ECS Fargate App Tasks
     //
@@ -88,14 +90,14 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
       // The ARN of a log group is in the form of arn:aws:logs:region:account-id:log-group:log-group-name:*
       // so we must strip the last "*" from the ARN for the log stream ARN to be correct...
       // `${this.logGroup.logGroupArn.slice(0,-1)}log-stream:*` -> but does not work
-      // `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-${this.name}:log-stream:*`
-      resources: [`arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-${this.name}:log-stream:*`],
+      // `arn:aws:logs:${stack.region}:${stack.account}:log-group:/fis/${this.prefix}-${this.name}:log-stream:*`
+      resources: [`arn:aws:logs:${stack.region}:${stack.account}:log-group:/fis/${this.prefix}-${this.name}:log-stream:*`],
       conditions: {
         StringEquals: {
-          'aws:SourceAccount': Stack.of(this).account,
+          'aws:SourceAccount': stack.account,
         },
         ArnLike: {
-          'aws:SourceArn': `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:*`,
+          'aws:SourceArn': `arn:aws:logs:${stack.region}:${stack.account}:*`,
         }
       }
     }));

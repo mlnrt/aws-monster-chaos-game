@@ -16,6 +16,8 @@ export class ChaosGameIamFis extends Construct {
 
     this.prefix = props.prefix;
 
+    const stack = Stack.of(this);
+
     // Policy to allow FIS to use the AWS FIS actions for fault injection for experiments part of this project
     const mainFisPolicy = new Policy(this, 'Policy', {
       policyName: `${this.prefix}-fis-policy`,
@@ -25,7 +27,7 @@ export class ChaosGameIamFis extends Construct {
             sid: 'AllowFISExperimentRoleFaultInjectionActions',
             effect: Effect.ALLOW,
             actions: ['fis:InjectApiInternalError', 'fis:InjectApiThrottleError', 'fis:InjectApiUnavailableError'],
-            resources: [`arn:aws:fis:${Stack.of(this).region}:${Stack.of(this).account}:experiment/*`],
+            resources: [`arn:aws:fis:${stack.region}:${stack.account}:experiment/*`],
             conditions: {
               StringEquals: {
                 'aws:ResourceTag/Project': this.prefix,
@@ -43,7 +45,7 @@ export class ChaosGameIamFis extends Construct {
             effect: Effect.ALLOW,
             actions: ['logs:DescribeLogGroups'],
             resources: [
-              `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/fis/${this.prefix}-*`
+              `arn:aws:logs:${stack.region}:${stack.account}:log-group:/fis/${this.prefix}-*`
             ],
           }),
         ],
@@ -66,13 +68,13 @@ export class ChaosGameIamFis extends Construct {
             sid: 'AllowFISExperimentRoleECSUpdateState',
             effect: Effect.ALLOW,
             actions: ['ecs:UpdateContainerInstancesState'],
-            resources: [`arn:aws:ecs:${Stack.of(this).region}:${Stack.of(this).account}:container-instance/*`],
+            resources: [`arn:aws:ecs:${stack.region}:${stack.account}:container-instance/*`],
           }),
           new PolicyStatement({
             sid: 'AllowFISExperimentRoleECSStopTask',
             effect: Effect.ALLOW,
             actions: ['ecs:StopTask'],
-            resources: [`arn:aws:ecs:${Stack.of(this).region}:${Stack.of(this).account}:task/*`],
+            resources: [`arn:aws:ecs:${stack.region}:${stack.account}:task/*`],
             conditions: {
               StringEquals: {
                 'aws:ResourceTag/FargateService': [`${this.prefix}-app`, `${this.prefix}-nginx`],

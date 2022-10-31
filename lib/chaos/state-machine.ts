@@ -32,6 +32,8 @@ export class ChaosGameFisStateMachine extends Construct {
 
     this.prefix = props.prefix;
 
+    const stack = Stack.of(this);
+
     // Create the Lambda function used to trigger the FIS experiments
     const triggerExperimentLambda = new ChaosGameLambda(this, 'TriggerFisLambda', {
       prefix: this.prefix,
@@ -52,8 +54,8 @@ export class ChaosGameFisStateMachine extends Construct {
           effect: Effect.ALLOW,
           actions: ['fis:StartExperiment', 'fis:TagResource'],
           resources: [
-            `arn:aws:fis:${Stack.of(this).region}:${Stack.of(this).account}:experiment-template/*`,
-            `arn:aws:fis:${Stack.of(this).region}:${Stack.of(this).account}:experiment/*`,
+            `arn:aws:fis:${stack.region}:${stack.account}:experiment-template/*`,
+            `arn:aws:fis:${stack.region}:${stack.account}:experiment/*`,
           ],
         })
       ]
@@ -70,7 +72,7 @@ export class ChaosGameFisStateMachine extends Construct {
         new PolicyStatement({
           effect: Effect.ALLOW,
           actions: ['fis:GetExperiment'],
-          resources: [`arn:aws:fis:${Stack.of(this).region}:${Stack.of(this).account}:experiment/*`],
+          resources: [`arn:aws:fis:${stack.region}:${stack.account}:experiment/*`],
           conditions: {
             StringEquals: {
               'aws:ResourceTag/Project': this.prefix,
