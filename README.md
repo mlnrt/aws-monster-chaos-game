@@ -1,4 +1,4 @@
-# The AWS Chaos Game
+# The AWS Monster Chaos Game
 This is a chaos engineering game for AWS developed using the AWS CDK. It includes:
 * A 3 tier 3 AZs simple web application stack
 * A chaos engineering stack to inject failures into the web application stack
