@@ -1,3 +1,4 @@
+import { writeFileSync } from "fs";
 import { Construct } from 'constructs';
 import { RemovalPolicy, Stack } from "aws-cdk-lib";
 import { CfnPolicy } from "aws-cdk-lib/aws-iot";
@@ -13,6 +14,7 @@ export class ChaosGameIotCore extends Construct {
   public readonly prefix: string;
   public readonly removalPolicy: RemovalPolicy;
   public readonly iotClientName: string;
+  public readonly iotThingArn: string;
   public readonly iotPolicy: CfnPolicy;
 
   constructor(scope: Construct, id: string, props: ChaosGameIotCoreProps) {
@@ -55,8 +57,11 @@ export class ChaosGameIotCore extends Construct {
     // CDK IoT Core Certificates: https://github.com/devops-at-home/cdk-iot-core-certificates
     const monsterThing = new ThingWithCert(this, 'Monster', {
       thingName: this.iotClientName,
-      saveToParamStore: true,
-      paramPrefix: `/iot/certs`,
+      saveToParamStore: false,
+      //paramPrefix: `/iot/certs`,
     });
+    this.iotThingArn = monsterThing.thingArn;
+    writeFileSync('../../certs/aws_cert.pem.crt', monsterThing.certPem);
+    writeFileSync('../../certs/private.pem.key', monsterThing.privKey);
   }
 }
