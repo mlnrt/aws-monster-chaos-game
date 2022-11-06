@@ -29,7 +29,7 @@ export class ChaosGameIotTopic extends Construct {
     this.topicRule = new TopicRule(this, 'TopicRule', {
       topicRuleName: `${this.prefix.replace(/-/g,'_')}_iot_topic_rule`,
       description: 'AWS IoT Topic Rule to trigger the FIS experiment',
-      sql: IotSql.fromStringAsVer20160323(`SELECT * FROM 'monster-chaos-game/monster' WHERE game_result == 'FAILED'`),
+      sql: IotSql.fromStringAsVer20160323(`SELECT * FROM 'monster-chaos-game/monster' WHERE game_result = 'FAILED'`),
       actions: [ new StepFunctionsAction(props.fisStateMachine)],
     });
   }
