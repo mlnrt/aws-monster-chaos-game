@@ -110,7 +110,7 @@ wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(
 
 # Initialize the graphics helper
 print("Loading AWS IoT Graphics...")
-aws_iot_splash_screen_file = open("/images/aws_splash.bmp", "rb")
+aws_iot_splash_screen_file = open("/images/main.bmp", "rb")
 aws_iot_splash_screen = displayio.OnDiskBitmap(aws_iot_splash_screen_file)
 aws_iot_splash_screen_sprite = displayio.TileGrid(
     aws_iot_splash_screen,
@@ -330,6 +330,9 @@ def play_a_game():
     touch_y = -1
     touch_time = 0
     wait_for_release = False
+    # Send an initial keep-alive MQTT message to AWS IoT
+    aws_iot.loop()
+    last_keep_alive = time.monotonic()
     while True:
         now = time.monotonic()
         if now >= touch_time:
@@ -365,6 +368,12 @@ def play_a_game():
             if status is None:
                 continue
             return status
+        # Send a keep-alive MQTT message every 30 seconds
+        if now - last_keep_alive > 30:
+            aws_iot.loop()
+            last_keep_alive = time.monotonic()
+            print("Sending keepalive at:", last_keep_alive)
+
 #pylint:enable=too-many-branches
 
 def reset_board():
@@ -426,6 +435,6 @@ while True:
         payload = {"game_result": "FAILED"}
         # Update device shadow
         aws_iot.publish(MQTT_TOPIC, json.dumps(payload))
-    # AWS IoT keep-alive
+        # AWS IoT keep-alive
     aws_iot.loop()
     time.sleep(5.0)
