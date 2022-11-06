@@ -47,7 +47,8 @@ from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 import adafruit_minimqtt.adafruit_minimqtt as MQTT
-from adafruit_aws_iot import MQTT_CLIENT
+from adafruit_minimqtt.adafruit_minimqtt import MMQTTException
+from adafruit_aws_iot import MQTT_CLIENT, AWS_IOT_ERROR
 from adafruit_seesaw.seesaw import Seesaw
 
 # =========================================================
@@ -368,11 +369,16 @@ def play_a_game():
             if status is None:
                 continue
             return status
-        # Send a keep-alive MQTT message every 30 seconds
-        if now - last_keep_alive > 30:
-            aws_iot.loop()
-            last_keep_alive = time.monotonic()
-            print("Sending keepalive at:", last_keep_alive)
+        # Send a keep-alive MQTT message every 29 seconds
+        # But let's not fail the game if a keep-alive message fails
+        if now - last_keep_alive > 29:
+            try:
+                aws_iot.loop()
+                last_keep_alive = time.monotonic()
+                print("Sending keepalive at:", last_keep_alive)
+            except (AWS_IOT_ERROR, MMQTTException, ConnectionError) as e:
+                print("MQTT error", e)
+                print("Continuing...")
 
 #pylint:enable=too-many-branches
 
@@ -420,6 +426,12 @@ def lose():
     tilegrid.y = 0
     wait_for_sound_and_cleanup(wavfile)
 
+def send_result_to_aws():
+    # Create a json-formatted device payload
+    payload = {"game_result": "FAILED"}
+    # Update device shadow
+    aws_iot.publish(MQTT_TOPIC, json.dumps(payload))
+
 # =========================================================
 # Game Start
 # =========================================================
@@ -431,10 +443,13 @@ while True:
     else:
         reveal()
         lose()
-        # Create a json-formatted device payload
-        payload = {"game_result": "FAILED"}
-        # Update device shadow
-        aws_iot.publish(MQTT_TOPIC, json.dumps(payload))
-        # AWS IoT keep-alive
+        try:
+            send_result_to_aws()
+        except (AWS_IOT_ERROR, MMQTTException, ConnectionError) as e:
+            print("MQTT error", e)
+            print("Reconnecting...")
+            aws_iot.connect()
+            send_result_to_aws()
+    # AWS IoT keep-alive
     aws_iot.loop()
     time.sleep(5.0)
