@@ -175,7 +175,8 @@ def message(client, topic, msg):
     print("Message from {}: {}".format(topic, msg))
 
 # Initialize AWS IoT MQTT API Client
-aws_iot = MQTT_CLIENT(client, keep_alive=180)
+# Setting a keep-alive other than the default of 30 doesn't seem to work
+aws_iot = MQTT_CLIENT(client)
 
 # Connect callback handlers to AWS IoT MQTT Client
 aws_iot.on_connect = connect
@@ -446,6 +447,7 @@ while True:
         try:
             send_result_to_aws()
         except (AWS_IOT_ERROR, MMQTTException, ConnectionError) as e:
+            # If there was a problem sending the MQTT message, let's try to reconnect first
             print("MQTT error", e)
             print("Reconnecting...")
             aws_iot.connect()
