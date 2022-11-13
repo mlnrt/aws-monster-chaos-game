@@ -6,7 +6,8 @@ import {
   ISecurityGroup,
   SecurityGroup,
   GatewayVpcEndpointAwsService,
-  InterfaceVpcEndpointAwsService
+  InterfaceVpcEndpointAwsService,
+  IpAddresses,
 } from 'aws-cdk-lib/aws-ec2';
 
 export interface ChaosGameWebAppNetworkProps {
@@ -32,7 +33,7 @@ export class ChaosGameWebAppNetwork extends Construct {
     this.vpc = new Vpc(this, 'Vpc', {
       vpcName: `${this.prefix}-webapp-vpc`,
       maxAzs: 3,
-      cidr: vpcCider,
+      ipAddresses: IpAddresses.cidr(vpcCider),
       natGateways: 3,
       subnetConfiguration: [
         {
@@ -110,6 +111,14 @@ export class ChaosGameWebAppNetwork extends Construct {
     // Add the S3 Gateway Endpoint
     this.vpc.addGatewayEndpoint('S3Endpoint', {
       service: GatewayVpcEndpointAwsService.S3,
+      subnets: [{
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      }]
+    });
+
+    // Add DynamoDB Gateway Endpoint
+    this.vpc.addGatewayEndpoint('DynamoDbEndpoint', {
+      service: GatewayVpcEndpointAwsService.DYNAMODB,
       subnets: [{
         subnetType: SubnetType.PRIVATE_ISOLATED,
       }]

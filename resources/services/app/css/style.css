@@ -1,0 +1,21 @@
+.app {
+    position: relative;
+}
+
+.wins {
+    position: absolute;
+    top: 51%;
+    left: 60%;
+    color: orange;
+    font-size: 3vw;
+    font-weight: bold;
+}
+
+.losses {
+    position: absolute;
+    top: 57%;
+    left: 60%;
+    color: orange;
+    font-size: 3vw;
+    font-weight: bold;
+}

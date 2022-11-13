@@ -21,15 +21,17 @@ export class AwsChaosGameAppStack extends Stack {
     this.prefix = props.prefix;
     this.removalPolicy = props.removalPolicy || RemovalPolicy.DESTROY;
 
-    this.webApp = new ChaosGameWebApp(this, 'WebApp', {
-      prefix: this.prefix,
-      removalPolicy: this.removalPolicy,
-    });
-
     // DynamoDB Table to store the experiment results
     this.scoreTable = new ChaosGameDynamodbTable(this, 'FisExperimentTable', {
       prefix: this.prefix,
       removalPolicy: this.removalPolicy,
     }).table;
+
+    this.webApp = new ChaosGameWebApp(this, 'WebApp', {
+      prefix: this.prefix,
+      removalPolicy: this.removalPolicy,
+      scoreTableName: this.scoreTable.tableName,
+      scoreTableArn: this.scoreTable.tableArn,
+    });
   }
 }

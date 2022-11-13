@@ -1,6 +1,6 @@
 import { Construct } from 'constructs';
-import { RemovalPolicy, Duration, Tags } from 'aws-cdk-lib';
-import { Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { RemovalPolicy, Duration, Tags, Stack } from 'aws-cdk-lib';
+import { Role, ServicePrincipal, Policy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import { RetentionDays, LogGroup } from 'aws-cdk-lib/aws-logs';
 import { IVpc, SubnetType, Port } from 'aws-cdk-lib/aws-ec2';
 import {
@@ -29,6 +29,8 @@ export interface ChaosGameWebAppProps {
   readonly workerCpu?: number;
   readonly workerMemoryMiB?: number;
   readonly vpcCider?: string;
+  readonly scoreTableName: string;
+  readonly scoreTableArn: string;
 }
 
 export class ChaosGameWebApp extends Construct {
@@ -51,6 +53,8 @@ export class ChaosGameWebApp extends Construct {
     this.namespace = webappConfig.app.namespace;
     this.appPath = webappConfig.app.path;
     this.removalPolicy = this.removalPolicy || RemovalPolicy.DESTROY;
+
+    const stack = Stack.of(this);
 
     //
     // VPC
@@ -96,15 +100,43 @@ export class ChaosGameWebApp extends Construct {
       removalPolicy: this.removalPolicy,
     });
 
-    // IAM Role for both Fargate tasks to give access to publish metrics to X-Ray
-    const taskRole = new Role(this, 'FargateTaskRole', {
-      roleName: `${this.prefix}-fargate-task-role`,
+    //
+    // IAM Roles for the Fargate Tasks
+    //
+    // IAM Role for the App Fargate task
+    const appTaskRole = new Role(this, 'AppTaskRole', {
+      roleName: `${this.prefix}-app-task-role`,
       assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
     });
-    taskRole.addManagedPolicy({
+    appTaskRole.addManagedPolicy({
       managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
     });
-    taskRole.addManagedPolicy({
+    appTaskRole.addManagedPolicy({
+      managedPolicyArn: 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
+    });
+
+    // Create policy to give GetIem right on the DynamoDB table the app task
+    const dynamodbPolicy = new Policy(this, 'DdbReadPolicy', {
+      policyName: `${this.prefix}-app-dynamodb-policy`,
+      statements: [
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          actions: ['dynamodb:GetItem'],
+          resources: [props.scoreTableArn],
+        }),
+      ],
+    });
+    dynamodbPolicy.attachToRole(appTaskRole);
+
+    // IAM Role for the Nginx Fargate task
+    const nginxTaskRole = new Role(this, 'NginxTaskRole', {
+      roleName: `${this.prefix}-nginx-task-role`,
+      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
+    });
+    nginxTaskRole.addManagedPolicy({
+      managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+    });
+    nginxTaskRole.addManagedPolicy({
       managedPolicyArn: 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
     });
 
@@ -119,12 +151,16 @@ export class ChaosGameWebApp extends Construct {
         operatingSystemFamily: OperatingSystemFamily.LINUX,
         cpuArchitecture: CpuArchitecture.ARM64
       },
-      taskRole: taskRole,
+      taskRole: appTaskRole,
     });
-
+    // Add the application container to the task
     const appContainer = appTaskDefinition.addContainer('AppContainer', {
       containerName: `${this.prefix}-app-task`,
       image: ContainerImage.fromEcrRepository(appImage.ecrRepo, 'app-latest'),
+      environment: {
+        AWS_REGION: stack.region,
+        TABLE_NAME: props.scoreTableName,
+      },
       logging: new AwsLogDriver({
         logGroup: webAppLogGroup,
         streamPrefix: `${this.prefix}-app-service`,
@@ -202,7 +238,7 @@ export class ChaosGameWebApp extends Construct {
           logGroup: webAppLogGroup,
           streamPrefix: `${this.prefix}-nginx-service`,
         }),
-        taskRole: taskRole
+        taskRole: nginxTaskRole
       },
       publicLoadBalancer: true,
       propagateTags: PropagatedTagSource.SERVICE,

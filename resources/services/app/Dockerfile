@@ -33,7 +33,8 @@ WORKDIR /usr/src/app
 COPY --chown=node:node --from=build /usr/src/app/node_modules /usr/src/app/node_modules
 # Bundle app source
 COPY --chown=node:node . /usr/src/app
-RUN sed -i "s|<APP-PATH>|$app_path|g" /usr/src/app/index.html
+RUN sed -i "s|<APP-PATH>|$app_path|g" /usr/src/app/views/pages/index.ejs
+RUN sed -i "s|<APP-PATH>|$app_path|g" /usr/src/app/views/partials/head.ejs
 RUN sed -i "s|<APP-PATH>|$app_path|g" /usr/src/app/server.js
 RUN sed -i "s|<APP-HEALTH-CHECK-PATH>|$app_health_check_path|g" /usr/src/app/server.js
 # Open ports
