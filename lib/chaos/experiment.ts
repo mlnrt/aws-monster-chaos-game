@@ -5,6 +5,7 @@ import { CfnExperimentTemplate } from "aws-cdk-lib/aws-fis";
 import { ILogGroup, LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { ChaosGameIamFis } from "./iam";
 import { ChaosGameCwAlarm } from "./cloudwatch";
+import * as webappConfig from '../../webapp-config.json';
 
 export enum ExperimentResourceType {
   ECS_STOP_TASK = 'aws:ecs:task',
@@ -77,7 +78,7 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
       },
       'waitFewMins': {
         actionId: 'aws:fis:wait',
-        parameters: {'duration': 'PT3M'},
+        parameters: {'duration': `PT${webappConfig.fis.numberOfEvaluationPeriods + 2}M`},
         startAfter: ['stopFargateTasks'],
       }
     }
@@ -208,7 +209,7 @@ export class ChaosGameFisApiExperiment extends ChaosGameFisExperiment {
             'service': 'ec2',
             'operations': 'DescribeInstances',
             'percentage': '100',
-            'duration': 'PT1M',
+            'duration': `PT${webappConfig.fis.numberOfEvaluationPeriods + 2}M`,
           },
           targets: {
             'Roles': 'internalErrorRole',

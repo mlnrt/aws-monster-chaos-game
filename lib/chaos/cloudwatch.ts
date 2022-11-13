@@ -3,6 +3,7 @@ import { Duration } from "aws-cdk-lib";
 import { Alarm, IAlarm, CompositeAlarm, AlarmRule, ComparisonOperator, TreatMissingData } from "aws-cdk-lib/aws-cloudwatch";
 import { ApplicationLoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { HttpCodeElb, HttpCodeTarget } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as webappConfig from '../../webapp-config.json';
 
 
 export interface ChaosGameCwAlarmProps {
@@ -23,8 +24,8 @@ export class ChaosGameCwAlarm extends Construct {
       alarmName: `${this.prefix}-elb-alarm`,
       alarmDescription: `CW Alarm when the ${this.prefix} stack application is down for more than 1 minute`,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-      threshold: 10,
-      evaluationPeriods: 1,
+      threshold: webappConfig.fis.alarmErrorThresholdPerPeriod,
+      evaluationPeriods: webappConfig.fis.numberOfEvaluationPeriods,
       metric: props.loadBalancer.metricHttpCodeElb(HttpCodeElb.ELB_5XX_COUNT, {
         period: Duration.minutes(1),
         statistic: 'sum',
@@ -36,8 +37,8 @@ export class ChaosGameCwAlarm extends Construct {
       alarmName: `${this.prefix}-nginx-alarm`,
       alarmDescription: `CW Alarm when the ${this.prefix} stack application is down for more than 1 minute`,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-      threshold: 10,
-      evaluationPeriods: 1,
+      threshold: webappConfig.fis.alarmErrorThresholdPerPeriod,
+      evaluationPeriods: webappConfig.fis.numberOfEvaluationPeriods,
       metric: props.loadBalancer.metricHttpCodeTarget(HttpCodeTarget.TARGET_5XX_COUNT, {
         period: Duration.minutes(1),
         statistic: 'sum',

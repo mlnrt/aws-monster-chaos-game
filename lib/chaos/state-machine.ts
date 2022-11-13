@@ -10,6 +10,7 @@ import {
   Choice,
   Condition,
   Succeed,
+  Fail,
   CustomState
 } from 'aws-cdk-lib/aws-stepfunctions';
 import { ITable } from 'aws-cdk-lib/aws-dynamodb';
@@ -105,12 +106,13 @@ export class ChaosGameFisStateMachine extends Construct {
     });
 
     //Create some Tasks for the State Machine
-    const wait10 = new Wait(this, 'wait10', { time: WaitTime.duration(Duration.seconds(10))});
+    const wait5 = new Wait(this, 'wait5', { time: WaitTime.duration(Duration.seconds(5))});
     const checkStatus = new LambdaInvoke(this, 'Check the Experiment Status', {
       lambdaFunction: checkExperimentLambda.function,
       payloadResponseOnly: true
     });
     const success = new Succeed(this, 'Experiment Finished');
+    const failure = new Fail(this, 'Experiment Failed');
     const winStateJson = {
       Type: 'Task',
       Resource: 'arn:aws:states:::dynamodb:updateItem',
@@ -130,7 +132,7 @@ export class ChaosGameFisStateMachine extends Construct {
         TableName: props.scoreTable.tableName,
         Key: {pk: { S: 'score' }},
         ExpressionAttributeValues: { ':inc': {N: '1'} },
-        UpdateExpression: 'ADD loses :inc'
+        UpdateExpression: 'ADD losses :inc'
       },
       Next: 'Experiment Finished'
     };
@@ -140,7 +142,7 @@ export class ChaosGameFisStateMachine extends Construct {
     const smDefinition = new LambdaInvoke(this, 'Trigger the Experiment', {
       lambdaFunction: triggerExperimentLambda.function,
       payloadResponseOnly: true,
-    }).next(wait10)
+    }).next(wait5)
       .next(new LambdaInvoke(this, 'Check the Application', {
         lambdaFunction: queryAppLambda.function,
         payloadResponseOnly: true,
@@ -152,13 +154,13 @@ export class ChaosGameFisStateMachine extends Construct {
           Condition.stringEquals('$.experimentStatus', 'initiating'),
           Condition.stringEquals('$.experimentStatus', 'pending'),
           Condition.stringEquals('$.experimentStatus', 'running')
-        ), wait10)
+        ), wait5)
         .when(Condition.stringEquals('$.experimentStatus', 'completed'), updateWinDB)
         .when(Condition.or(
-          Condition.stringEquals('$.experimentStatus', 'failed'),
           Condition.stringEquals('$.experimentStatus', 'stopping'),
           Condition.stringEquals('$.experimentStatus', 'stopped')
         ), updateLooseDB)
+        .when(Condition.stringEquals('$.experimentStatus', 'failed'), failure)
         .otherwise(success));
 
     // Create the State Machine based on the definition

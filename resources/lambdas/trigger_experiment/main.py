@@ -21,6 +21,8 @@ def lambda_handler(event, context):
         list_templates_response = fis.list_experiment_templates(NextToken=list_templates_response.get("nextToken"))
         experiment_templates.extend(list_templates_response.get("experimentTemplates"))
     # Keep only the experiment templates that have the "Project" tag set to this project value
+    # To trigger a specific experiment add in the if condition something like
+    # and "All ECS Fargate Task from the Nginx Service" in template.get("tags").get("Name")
     experiment_templates = [template for template in experiment_templates
                             if template.get("tags", {}).get("Project") == PROJECT_TAG]
     logger.info({"experiment_templates": experiment_templates})

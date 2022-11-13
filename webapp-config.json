@@ -9,5 +9,9 @@
     "nginx": {
         "port": 8080,
         "healthCheckPath": "/health"
+    },
+    "fis": {
+        "numberOfEvaluationPeriods": 2,
+        "alarmErrorThresholdPerPeriod": 50
     }
 }
