@@ -22,5 +22,5 @@ CircuitPython 7.x libraries. Store the file on you computer and unzip the file. 
 5. Once you have deployed the CDK stack, go into the AWS console in the `Systems Manager` service and select the 
 `Parameter Store`. You will find the content of both the Iot certificate and the Iot private key. Copy the content of
 these parameters as follow:
-    * Copy the content of the `/iot/certs/certPem` into the empty `aws_cert.pem.crt` file
-    * Copy the content of the `/iot/certs/privKey` into the empty `private.pem.key` file
+    * Copy the content of the `/iot/certs/chaos-game-xxxxxx-monster/certPem` into the empty `aws_cert.pem.crt` file
+    * Copy the content of the `/iot/certs/chaos-game-xxxxxx-monster/privKey` into the empty `private.pem.key` file
