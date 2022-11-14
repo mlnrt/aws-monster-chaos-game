@@ -1,4 +1,4 @@
-# How to Configure Adafruit Pyportal
+# How to Configure Adafruit Pyportal?
 These are the instructions to setup your Adafruit Pyportal for this demo
 
 ## References

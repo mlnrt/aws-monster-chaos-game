@@ -17,36 +17,12 @@ The list below is for _Windows_ environment
 * NPM and Node.js ([Documenttaion](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm))
 * The AWS CDK: `npm install -g aws-cdk`
 
-## Setup your Adafruit PyPortal
-Please refer to this [README](doc/PYPORTAL.md)
+If you want the full experiment, you will need an Adafruit PyPortal which you can purchase 
+[here](https://www.adafruit.com/product/4116). But if you don't have you can still deploy the stacks and trigger 
+manually the AWS Step Function to inject failures into the web application stack.
 
-## Deploy the Stacks on AWS
-Once you have all the prerequisites, go in the repository folder and perform the steps below.
-### Deploy the Stacks on AWS
-If you have multiple AWS CLI configuration profiles use the `--profile <your profile name>` to use it for authentication.
+## Setup
+1. Setup your Adafruit PyPortal. Please refer to this [README](doc/PYPORTAL.md)
+2. Deploy the Stacks on AWS. Please refer to this [README](doc/CDK.md)
 
-Bootsrap the CDK
-```
-cdk bootstrap aws://<account number>/<aws region>
-```
-
-e.g.
-```
-cdk bootstrap aws://123456789012/eu-west-1
-```
-
-
-Install the Node.js modules defined in the package.json file
-```
-npm install
-```
-
-Verify the stack before deployment
-```
-cdk synth
-```
-
-Deploy the stack
-```
-cdk deploy --all
-```
+## Code References
