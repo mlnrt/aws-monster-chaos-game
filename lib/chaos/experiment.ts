@@ -9,7 +9,6 @@ import * as webappConfig from '../../webapp-config.json';
 
 export enum ExperimentResourceType {
   ECS_STOP_TASK = 'aws:ecs:task',
-  API_INTERNAL_ERROR = 'aws:iam:role',
 }
 
 interface ChaosGameFisExperimentProps {
@@ -25,7 +24,6 @@ class ChaosGameFisExperiment extends Construct {
   public readonly prefix: string;
   public readonly name: string;
   public readonly removalPolicy: RemovalPolicy;
-  public readonly experiments: CfnExperimentTemplate[];
   public readonly experimentResourceType: ExperimentResourceType;
   public readonly logGroup: ILogGroup;
 
@@ -104,7 +102,7 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
     }));
 
     // Experiment to stop ALL tasks of one of the Fargate Service
-    const fisStopAllExperiment = new CfnExperimentTemplate(this, 'StopAllExperiment', {
+    new CfnExperimentTemplate(this, 'StopAllExperiment', {
       description: `FIS experiment to stop All ECS Fargate tasks from the ${this.targetTask} service`,
       roleArn: props.fisIamRoles.ecsExperimentRole.roleArn,
       stopConditions: [
@@ -129,10 +127,9 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
         Project: this.prefix,
       }
     });
-    //this.experiments.push(fisStopAllExperiment);
 
     // Experiment to stop ONE task randomly of one of the Fargate Service
-    const fisStopOneExperiment = new CfnExperimentTemplate(this, 'StopOneExperiment', {
+    new CfnExperimentTemplate(this, 'StopOneExperiment', {
       description: `FIS experiment to stop one ECS Fargate tasks from the ${this.targetTask} service`,
       roleArn: props.fisIamRoles.ecsExperimentRole.roleArn,
       stopConditions: [
@@ -186,7 +183,7 @@ export class ChaosGameFisApiExperiment extends ChaosGameFisExperiment {
     };
 
     // Experiment to inject an API internal error
-    const fisApiInternalErrorExperiment = new CfnExperimentTemplate(this, 'ApiInternalErrorExperiment', {
+    new CfnExperimentTemplate(this, 'ApiInternalErrorExperiment', {
       description: `FIS experiment to inject an API internal error on the ${this.targetService} service`,
       roleArn: props.fisIamRoles.ecsExperimentRole.roleArn,
       stopConditions: [
