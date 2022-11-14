@@ -1,20 +1,24 @@
 # The AWS Monster Chaos Game
-This is a chaos engineering game for AWS developed using the AWS CDK. It includes:
-* A 3 tier 3 AZs simple web application stack
+This is a chaos engineering game for AWS developed using the AWS CDK and an 
+[Adafruit Pyportal](https://www.adafruit.com/product/4116) microcontroller. It includes:
+* A 4 tiers 3 AZs simple web application stack
 * A chaos engineering stack to inject failures into the web application stack
 * An IoT Stack to register an Adafruit PyPortal microcontroller to AWS IoT Core and trigger chaos experiments 
-* A Circuit Python Game for Adafruit PyPortal microcontroller to play the game
+* A Circuit Python Game for Adafruit PyPortal microcontroller
 
 ## The Architecture
 ![](doc/images/aws-chaos-game.jpg)
 
 ## What are the Prerequisites?
 The list below is for _Windows_ environment
-* clone this repository
+* Clone this repository
 * The AWS CLI ([documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html))
 * Docker Desktop ([Documentation](https://docs.docker.com/desktop/windows/install/))
 * NPM and Node.js ([Documenttaion](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm))
 * The AWS CDK: `npm install -g aws-cdk`
+
+## Setup your Adafruit PyPortal
+Please refer to this [README](doc/PYPORTAL.md)
 
 ## Deploy the Stacks on AWS
 Once you have all the prerequisites, go in the repository folder and perform the steps below.
@@ -44,5 +48,5 @@ cdk synth
 
 Deploy the stack
 ```
-cdk cdk destroy --all
+cdk deploy --all
 ```
