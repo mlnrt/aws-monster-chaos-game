@@ -120,7 +120,7 @@ export class ChaosGameFisStateMachine extends Construct {
         TableName: props.scoreTable.tableName,
         Key: {pk: { S: 'score' }},
         ExpressionAttributeValues: { ':inc': {N: '1'} },
-        UpdateExpression: 'ADD wins :inc'
+        UpdateExpression: 'ADD won :inc'
       },
       Next: 'Experiment Finished'
     };
@@ -132,7 +132,7 @@ export class ChaosGameFisStateMachine extends Construct {
         TableName: props.scoreTable.tableName,
         Key: {pk: { S: 'score' }},
         ExpressionAttributeValues: { ':inc': {N: '1'} },
-        UpdateExpression: 'ADD losses :inc'
+        UpdateExpression: 'ADD lost :inc'
       },
       Next: 'Experiment Finished'
     };

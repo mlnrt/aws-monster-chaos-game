@@ -47,14 +47,14 @@ app.get('<APP-PATH>', (req,res) => {
   ddbDocumentClient.get(ddbParams, function(err, data) {
     if (err) {
       console.log("Error", err);
-      res.render('pages/index', {wins: '#', losses: '#'});
+      res.render('pages/index', {won: '#', lost: '#'});
     } else {
       console.log("Score data:", data.Item);
       // If there is no Item in the response, then the score is not set yet, so set it to 0
       if (data.Item) {
-        res.render('pages/index', {wins: data.Item.wins || 0, losses: data.Item.losses || 0});
+        res.render('pages/index', {won: data.Item.won || 0, lost: data.Item.lost || 0});
       } else {
-        res.render('pages/index', {wins: 0, losses: 0});
+        res.render('pages/index', {won: 0, lost: 0});
       }
     }
   });

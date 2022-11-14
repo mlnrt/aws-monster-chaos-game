@@ -2,7 +2,7 @@
     position: relative;
 }
 
-.wins {
+.won {
     position: absolute;
     top: 51%;
     left: 60%;
@@ -11,7 +11,7 @@
     font-weight: bold;
 }
 
-.losses {
+.lost {
     position: absolute;
     top: 57%;
     left: 60%;
