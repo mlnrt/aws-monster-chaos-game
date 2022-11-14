@@ -78,7 +78,7 @@ export class ChaosGameFisFargateExperiment extends ChaosGameFisExperiment {
       },
       'waitFewMins': {
         actionId: 'aws:fis:wait',
-        parameters: {'duration': `PT${webappConfig.fis.numberOfEvaluationPeriods + 2}M`},
+        parameters: {'duration': `PT${webappConfig.fis.numberOfEvaluationPeriods + 3}M`},
         startAfter: ['stopFargateTasks'],
       }
     }
@@ -209,7 +209,7 @@ export class ChaosGameFisApiExperiment extends ChaosGameFisExperiment {
             'service': 'ec2',
             'operations': 'DescribeInstances',
             'percentage': '100',
-            'duration': `PT${webappConfig.fis.numberOfEvaluationPeriods + 2}M`,
+            'duration': `PT${webappConfig.fis.numberOfEvaluationPeriods + 3}M`,
           },
           targets: {
             'Roles': 'internalErrorRole',
