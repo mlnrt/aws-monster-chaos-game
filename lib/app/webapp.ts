@@ -145,6 +145,7 @@ export class ChaosGameWebApp extends Construct {
     //
     // Create a Fargate service for the application
     const appTaskDefinition = new FargateTaskDefinition(this, 'AppTaskDefinition', {
+      family: `${this.prefix}-app-task-definition`,
       cpu: props.workerCpu || 256,
       memoryLimitMiB: props.workerMemoryMiB || 512,
       runtimePlatform: {
@@ -176,6 +177,7 @@ export class ChaosGameWebApp extends Construct {
           protocol: Protocol.TCP,
       }]
     });
+
     // Add the X-Ray daemon as a sidecar container
     appTaskDefinition.addContainer('xray', {
       image: ContainerImage.fromEcrRepository(appImage.ecrRepo, 'xray-latest'),
@@ -230,6 +232,7 @@ export class ChaosGameWebApp extends Construct {
         cpuArchitecture: CpuArchitecture.ARM64
       },
       taskImageOptions: {
+        family: `${this.prefix}-nginx-task-definition`,
         containerName: `${this.prefix}-nginx-task`,
         image: ContainerImage.fromEcrRepository(appImage.ecrRepo, 'nginx-latest'),
         containerPort: webappConfig.nginx.port,

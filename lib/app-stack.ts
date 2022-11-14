@@ -27,7 +27,7 @@ export class AwsChaosGameAppStack extends Stack {
       removalPolicy: this.removalPolicy,
     }).table;
 
-    this.webApp = new ChaosGameWebApp(this, 'WebApp', {
+    this.webApp = new ChaosGameWebApp(this, 'Web', {
       prefix: this.prefix,
       removalPolicy: this.removalPolicy,
       scoreTableName: this.scoreTable.tableName,
