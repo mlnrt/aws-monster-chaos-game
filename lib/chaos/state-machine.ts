@@ -167,7 +167,7 @@ export class ChaosGameFisStateMachine extends Construct {
     const stateMachine = new StateMachine(this, 'fisProcess', {
       definition: smDefinition,
       stateMachineName: `${this.prefix}-fis-process`,
-      timeout: Duration.minutes(5),
+      timeout: Duration.minutes(10),
       stateMachineType: StateMachineType.STANDARD,
       logs: {
         destination: fisStateMachineLogGroup,
