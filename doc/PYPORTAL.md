@@ -17,8 +17,7 @@ CircuitPython 7.3.3 on the PyPortal.
 4. From [this page](https://circuitpython.org/libraries) download the `Bundle for Version 7.x` full bundle of 
 CircuitPython 7.x libraries. Store the file on you computer and unzip the file. Copy-paste the entire content of the
 `lib` folder to the `/lib` folder on the PyPortal, replacing all existing files.
-4. Copy the content of the `/resources/adafruit` folder to the PyPortal's 
-`CIRCUITPY` drive.
+4. Copy the content of this repository's `/resources/adafruit` folder to the PyPortal's `CIRCUITPY` drive.
 5. Once you have deployed the CDK stack, go into the AWS console in the `Systems Manager` service and select the 
 `Parameter Store`. You will find the content of both the Iot certificate and the Iot private key. Copy the content of
 these parameters as follow:
