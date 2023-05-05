@@ -1,4 +1,4 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2.0.20220912.1-arm64v8
+FROM --platform=linux/amd64 public.ecr.aws/amazonlinux/amazonlinux:2.0.20230418.0-arm64v8
 RUN yum install -y unzip
 RUN curl -o daemon.zip https://s3.us-east-2.amazonaws.com/aws-xray-assets.us-east-2/xray-daemon/aws-xray-daemon-linux-arm64-3.x.zip
 RUN unzip daemon.zip && cp xray /usr/bin/xray

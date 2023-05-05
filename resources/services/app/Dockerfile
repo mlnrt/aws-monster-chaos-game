@@ -4,7 +4,7 @@
 # https://github.com/silvestriluca/zombie-drivers-node-aws/blob/develop/services/gateway/Dockerfile
 
 # --------------> The build image
-FROM public.ecr.aws/docker/library/node:18.9.0 AS build
+FROM --platform=linux/amd64 public.ecr.aws/docker/library/node:20.1.0 AS build
 # Install dumb-init (5. Properly handle events to safely terminate a Node.js Docker web application)
 RUN apt-get -y update
 # Set env variable to production
@@ -14,10 +14,10 @@ WORKDIR /usr/src/app
 # Install app dependencies
 COPY --chown=node:node package*.json ./
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # --------------> The production image
-FROM public.ecr.aws/docker/library/node:18.9.0-alpine
+FROM --platform=linux/amd64 public.ecr.aws/docker/library/node:20.1.0-alpine
 ARG app_path
 ARG app_port
 ARG app_health_check_path
@@ -25,8 +25,6 @@ ARG app_health_check_path
 RUN apk add --update dumb-init curl
 # Set env variable to production
 ENV NODE_ENV production
-# Sets limited user (node)
-USER node
 # Create app directory
 WORKDIR /usr/src/app
 # Copy libraires/node modules
@@ -42,6 +40,8 @@ EXPOSE 3000
 # Set env variables
 ENV PORT=$app_port
 ENV HOST=0.0.0.0
+# Sets limited user (node)
+USER node
 # Starts service
 
 CMD [ "dumb-init", "node", "server.js" ]

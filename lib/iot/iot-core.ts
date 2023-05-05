@@ -28,7 +28,7 @@ export class ChaosGameIotCore extends Construct {
     const monsterThing = new ThingWithCert(this, 'Monster', {
       thingName: this.iotClientName,
       saveToParamStore: true,
-      paramPrefix: `/iot/certs`,
+      paramPrefix: `iot/certs`,
     });
     this.iotThingArn = monsterThing.thingArn;
   }
