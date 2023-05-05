@@ -50,7 +50,7 @@ parameters are used to configure the AWS Fargate Tasks and the Amazon CloudWatch
      * __healthCheckPath__: Path of the health check of the Nginx reverse proxy. This is used by the ALB to monitor the
      health of the Nginx reverse proxy AWS Fargate Tasks.
    * __fis__: Configuration of the alarm level triggering an AWS FIS experiment to be stopped.
-     * __numberOfEvaluationPeriods__: The number ob 1 minutes periods for the metric to be above the threshold to raise
+     * __numberOfEvaluationPeriods__: The number of 1 minutes periods for the metric to be above the threshold to raise
      an alarm
      * __alarmErrorThresholdPerPeriod__: The number of acceptable errors during a 1 minute period.
    If a metric is above the threshold for the number of periods, an alarm is raised and the AWS FIS experiment is stopped.
