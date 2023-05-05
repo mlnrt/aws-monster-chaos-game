@@ -19,7 +19,7 @@ CircuitPython 7.x libraries. Store the file on you computer and unzip the file. 
 `lib` folder to the `/lib` folder on the PyPortal, replacing all existing files.
 4. Copy the content of this repository's `/resources/adafruit` folder to the PyPortal's `CIRCUITPY` drive.
 5. In the AWS IoT console, 
-  * in the left menu go in `Settings` menu and copy the name on your device data endpoint (e.g. `a12345bc67de8f-abc.iot.eu-west-1.amazonaws.com`)
+  * in the left menu go in `Settings` menu and copy the name on your device data endpoint (e.g. `a12345bc67de8f-ats.iot.eu-west-1.amazonaws.com`)
   * in the left menu in `Manage > All devices > Things`, copy the Adafruit thing name (e.g. `chaos-game-12a3b4-monster`)
 6. On the Adafruit device, edit the `secrets.py` and:
   * add your WiFi SSID and password
