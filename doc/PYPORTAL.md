@@ -19,12 +19,12 @@ CircuitPython 7.x libraries. Store the file on you computer and unzip the file. 
 `lib` folder to the `/lib` folder on the PyPortal, replacing all existing files.
 4. Copy the content of this repository's `/resources/adafruit` folder to the PyPortal's `CIRCUITPY` drive.
 5. In the AWS IoT console, 
-  * in the left menu go in `Settings` menu and copy the name on your device data endpoint (e.g. `a12345bc67de8f-ats.iot.eu-west-1.amazonaws.com`)
-  * in the left menu in `Manage > All devices > Things`, copy the Adafruit thing name (e.g. `chaos-game-12a3b4-monster`)
+    * in the left menu go in `Settings` menu and copy the name on your device data endpoint (e.g. `a12345bc67de8f-ats.iot.eu-west-1.amazonaws.com`)
+    * in the left menu in `Manage > All devices > Things`, copy the Adafruit thing name (e.g. `chaos-game-12a3b4-monster`)
 6. On the Adafruit device, edit the `secrets.py` and:
-  * add your WiFi SSID and password
-  * in the `broker` key, put your AWS IoT device data endpoint
-  * in the `client_id`, put the IoT Thing name created by the CDK stack for the Adafruit PyPortal
+    * add your WiFi SSID and password
+    * in the `broker` key, put your AWS IoT device data endpoint
+    * in the `client_id`, put the IoT Thing name created by the CDK stack for the Adafruit PyPortal
 7. Once you have deployed the CDK stack, go into the AWS console in the `Systems Manager` service and select the 
 `Parameter Store`. You will find the content of both the Iot certificate and the Iot private key. Copy the content of
 these parameters as follow:
